@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paraform Candidate Matcher</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+:root{--bg:#F7F6F2;--surface:#FFF;--border:rgba(0,0,0,.08);--border-strong:rgba(0,0,0,.15);--text:#1A1A18;--text-2:#5C5C58;--text-3:#9C9C96;--green:#1D9E75;--green-bg:#E1F5EE;--green-text:#085041;--amber:#BA7517;--amber-bg:#FAEEDA;--amber-text:#633806;--red:#E24B4A;--red-bg:#FCEBEB;--red-text:#791F1F;--blue-bg:#E6F1FB;--blue-text:#0C447C;--purple-bg:#F3EFFE;--purple-text:#4B2EA8;--radius:10px;--radius-sm:6px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;}
+.shell{display:flex;min-height:100vh;}
+.sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 0;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;}
+.logo{padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:16px;}
+.logo-mark{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;letter-spacing:.05em;}
+.logo-sub{font-size:11px;color:var(--text-3);margin-top:2px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;cursor:pointer;font-size:13px;color:var(--text-2);border-left:2px solid transparent;transition:all .12s;}
+.nav-item:hover{color:var(--text);background:var(--bg);}
+.nav-item.active{color:var(--text);border-left-color:var(--text);font-weight:500;background:var(--bg);}
+.nav-item i{font-size:16px;}
+.nav-section{font-size:10px;font-weight:500;letter-spacing:.08em;color:var(--text-3);padding:16px 20px 6px;text-transform:uppercase;}
+.sidebar-footer{margin-top:auto;padding:16px 20px 0;border-top:1px solid var(--border);}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-right:6px;}
+.status-dot.err{background:var(--red);}.status-dot.loading{background:var(--amber);}
+.sidebar-status{font-size:11px;color:var(--text-3);display:flex;align-items:center;}
+.main{margin-left:220px;flex:1;padding:32px;max-width:1100px;}
+.page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;}
+.page-title{font-size:22px;font-weight:500;}.page-sub{font-size:13px;color:var(--text-3);margin-top:3px;}
+.header-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-strong);background:var(--surface);color:var(--text);font-size:13px;cursor:pointer;font-family:inherit;transition:all .12s;}
+.btn:hover{background:var(--bg);}
+.btn.success{background:var(--green-bg);color:var(--green-text);border-color:rgba(29,158,117,.25);}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;}
+.stat-label{font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+.stat-value{font-size:26px;font-weight:500;font-family:'DM Mono',monospace;}
+.stat-sub{font-size:11px;color:var(--text-3);margin-top:3px;}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;transition:border-color .12s;}
+.card:hover{border-color:var(--border-strong);}
+.card-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.avatar{width:36px;height:36px;border-radius:50%;flex-shrink:0;background:var(--blue-bg);color:var(--blue-text);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;}
+.card-name{font-size:14px;font-weight:500;}.card-sub{font-size:12px;color:var(--text-3);margin-top:1px;}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+.tag{font-size:11px;padding:2px 7px;border-radius:4px;border:1px solid var(--border);color:var(--text-2);background:var(--bg);}
+.tag.req{background:var(--blue-bg);color:var(--blue-text);border-color:rgba(55,138,221,.2);}
+.tag.enriched{background:var(--purple-bg);color:var(--purple-text);border-color:#C8B8F8;}
+.card-footer{margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+.match-btn{width:100%;padding:6px;font-size:12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;cursor:pointer;color:var(--text-2);font-family:inherit;transition:all .12s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.match-btn:hover{background:var(--bg);color:var(--text);}
+.result-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;margin-bottom:10px;transition:border-color .12s;}
+.result-card.selected{border-color:var(--green);border-width:1.5px;}
+.result-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.score-num{font-size:24px;font-weight:500;font-family:'DM Mono',monospace;}
+.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;margin-bottom:3px;}
+.badge-green{background:var(--green-bg);color:var(--green-text);}
+.badge-amber{background:var(--amber-bg);color:var(--amber-text);}
+.badge-red{background:var(--red-bg);color:var(--red-text);}
+.score-bar-wrap{height:4px;background:var(--bg);border-radius:2px;margin:8px 0 6px;}
+.score-bar{height:4px;border-radius:2px;transition:width .5s ease;}
+.bar-green{background:var(--green);}.bar-amber{background:var(--amber);}.bar-red{background:var(--red);}
+.breakdown{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0 6px;background:var(--bg);border-radius:var(--radius-sm);padding:10px;}
+.breakdown-item{text-align:center;}
+.breakdown-val{font-size:13px;font-weight:500;font-family:'DM Mono',monospace;}
+.breakdown-label{font-size:10px;color:var(--text-3);margin-top:1px;}
+.missing-skills{margin-top:6px;font-size:11px;color:var(--text-3);}
+.missing-skills span{display:inline-block;background:var(--red-bg);color:var(--red-text);border-radius:3px;padding:1px 5px;margin-right:3px;font-size:10px;}
+.result-links{display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;align-items:center;}
+.result-link{font-size:11px;color:var(--blue-text);text-decoration:none;background:none;border:none;cursor:pointer;font-family:inherit;}
+.result-link:hover{text-decoration:underline;}
+.result-link i{font-size:12px;vertical-align:-1px;margin-right:2px;}
+.chk{width:15px;height:15px;cursor:pointer;accent-color:var(--green);flex-shrink:0;margin-top:2px;}
+.shortlist-bar{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1A1A18;color:#F7F6F2;padding:12px 20px;border-radius:40px;display:flex;align-items:center;gap:16px;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,.2);z-index:100;white-space:nowrap;transition:opacity .2s;}
+.shortlist-bar.hidden{opacity:0;pointer-events:none;}
+.sl-btn{padding:5px 12px;border-radius:20px;font-size:12px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);color:#F7F6F2;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;transition:background .12s;}
+.sl-btn:hover{background:rgba(255,255,255,.22);}
+.sl-btn.export{background:var(--green);border-color:var(--green);}
+.empty{text-align:center;padding:60px 20px;color:var(--text-3);}
+.empty i{font-size:36px;margin-bottom:12px;display:block;}
+.section-label{font-size:11px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner{animation:spin 1s linear infinite;display:inline-block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.fade-up{animation:fadeUp .2s ease forwards;}
+.context-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;margin-bottom:20px;}
+.filter-row{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center;}
+.filter-row select{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-strong);background:var(--surface);color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;}
+.back-btn{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-3);background:none;border:none;cursor:pointer;font-family:inherit;padding:0;}
+.back-btn:hover{color:var(--text);}
+.seniority-pill{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;display:inline-block;}
+.seniority-Founding{background:#FFF3E0;color:#E65100;}
+.seniority-Staff{background:#EDE7F6;color:#4527A0;}
+.seniority-Senior{background:#E8F5E9;color:#1B5E20;}
+.seniority-Lead{background:#E3F2FD;color:#0D47A1;}
+.seniority-Mid{background:var(--bg);color:var(--text-2);}
+.seniority-Junior{background:#FAFAFA;color:var(--text-3);}
+.profile-section{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+.profile-section-title{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:6px;}
+.company-item{font-size:12px;color:var(--text-2);margin-bottom:3px;}
+.company-item span{color:var(--text-3);font-size:11px;}
+.notes-box{width:100%;padding:10px 12px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);resize:vertical;min-height:90px;line-height:1.5;transition:border-color .12s;}
+.notes-box:focus{outline:none;border-color:var(--text);}
+.notes-preview{font-size:12px;color:var(--text-2);background:var(--bg);border-radius:var(--radius-sm);padding:8px 10px;margin-top:6px;line-height:1.5;white-space:pre-wrap;border-left:2px solid var(--border-strong);}
+.notes-btn{font-size:11px;color:var(--blue-text);background:none;border:none;cursor:pointer;font-family:inherit;padding:0;display:inline-flex;align-items:center;gap:3px;}
+.notes-btn:hover{text-decoration:underline;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:flex;align-items:center;justify-content:center;}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;width:500px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.15);}
+.modal-title{font-size:16px;font-weight:500;margin-bottom:4px;}
+.modal-sub{font-size:12px;color:var(--text-3);margin-bottom:16px;}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;}
+</style>
+</head>
+<body>
+<!-- Password gate -->
+<div id="gate" style="position:fixed;inset:0;background:#F7F6F2;display:flex;align-items:center;justify-content:center;z-index:9999;font-family:'DM Sans',sans-serif;">
+  <div style="background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:12px;padding:40px;width:340px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.08);">
+    <div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500;letter-spacing:.05em;margin-bottom:4px;">MATCHER</div>
+    <div style="font-size:12px;color:#9C9C96;margin-bottom:28px;">Paraform · Supabase · AI</div>
+    <input id="pw-input" type="password" placeholder="Enter password"
+      style="width:100%;padding:10px 14px;border:1px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;outline:none;margin-bottom:10px;"
+      onkeydown="if(event.key==='Enter')checkPassword()">
+    <div id="pw-error" style="font-size:12px;color:#E24B4A;margin-bottom:10px;min-height:18px;"></div>
+    <button onclick="checkPassword()"
+      style="width:100%;padding:10px;background:#1A1A18;color:#F7F6F2;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit;">
+      Enter
+    </button>
+  </div>
+</div>
+
+<script>
+(function(){
+  // Check if already authenticated this session
+  if(sessionStorage.getItem('matcher_auth')==='1'){
+    document.getElementById('gate').style.display='none';
+  }
+})();
+
+function checkPassword(){
+  const input=document.getElementById('pw-input').value;
+  const hash=input.split('').reduce((a,c)=>((Math.imul(31,a)+c.charCodeAt(0))>>>0),0);
+  if(hash===PASSWD_HASH){
+    sessionStorage.setItem('matcher_auth','1');
+    document.getElementById('gate').style.display='none';
+  } else {
+    document.getElementById('pw-error').textContent='Incorrect password — try again.';
+    document.getElementById('pw-input').value='';
+    document.getElementById('pw-input').focus();
+  }
+}
+</script>
+
+<div class="shell">
+  <nav class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">MATCHER</div>
+      <div class="logo-sub">Paraform · Supabase · AI</div>
+    </div>
+    <div class="nav-section">Browse</div>
+    <div class="nav-item active" onclick="switchNav('candidates')" id="nav-candidates"><i class="ti ti-users"></i> Candidates</div>
+    <div class="nav-item" onclick="switchNav('roles')" id="nav-roles"><i class="ti ti-briefcase"></i> Open Roles</div>
+    <div class="nav-section">Tools</div>
+    <div class="nav-item" onclick="switchNav('shortlist')" id="nav-shortlist"><i class="ti ti-clipboard-list"></i> Shortlist <span id="sl-count" style="margin-left:auto;font-size:11px;background:var(--bg);padding:1px 6px;border-radius:10px;"></span></div>
+    <div class="sidebar-footer">
+      <div class="sidebar-status"><span class="status-dot loading" id="status-dot"></span><span id="status-text">Connecting…</span></div>
+      <button class="btn" onclick="refreshData()" style="margin-top:10px;width:100%;justify-content:center;font-size:12px;"><i class="ti ti-refresh"></i> Refresh</button>
+    </div>
+  </nav>
+  <main class="main" id="main"></main>
+</div>
+<div class="shortlist-bar hidden" id="shortlist-bar">
+  <span id="sl-bar-count">0 shortlisted</span>
+  <div style="display:flex;gap:8px;">
+    <button class="sl-btn export" onclick="exportCSV()"><i class="ti ti-download"></i> Export CSV</button>
+    <button class="sl-btn" onclick="clearShortlist()"><i class="ti ti-x"></i> Clear</button>
+  </div>
+</div>
+
+<script>
+const PASSWD_HASH=2832211206;
+const SUPABASE_URL="https://kpunxzkikcjarszezyjz.supabase.co";
+const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwdW54emtpa2NqYXJzemV6eWp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNTMxMDIsImV4cCI6MjA5NjcyOTEwMn0.D5HvUR5idBkp3YadKC5PYnDlgEYmOO_OqBuvBzpb7aM";
+const CACHE_TTL=5*60*1000;
+let state={candidates:[],roles:[],loading:true,dbOk:false,view:"candidates",matchType:null,matchTarget:null,shortlist:new Set(),filterScore:"all",filterExp:"all",filterSeniority:"all"};
+let cache={candidates:null,roles:null,ts_c:0,ts_r:0};
+
+async function sbFetch(table,bust){
+  const key=table==="candidates"?"candidates":"roles";
+  const ts=table==="candidates"?cache.ts_c:cache.ts_r;
+  if(cache[key]&&Date.now()-ts<CACHE_TTL&&!bust)return cache[key];
+  const res=await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*&order=id.desc&limit=2000`,{headers:{apikey:SUPABASE_KEY,Authorization:"Bearer "+SUPABASE_KEY}});
+  if(!res.ok)throw new Error(await res.text());
+  const data=await res.json();
+  cache[key]=data;
+  if(table==="candidates")cache.ts_c=Date.now();else cache.ts_r=Date.now();
+  return data;
+}
+
+async function loadData(bust){
+  setStatus("loading","Loading…");
+  try{
+    state.candidates=await sbFetch("candidates",bust);
+    state.roles=await sbFetch("roles",bust);
+    state.dbOk=true;
+    const enriched=state.candidates.filter(c=>c.skills&&c.skills.length>0).length;
+    setStatus("ok",`${state.candidates.length} candidates (${enriched} enriched) · ${state.roles.length} roles`);
+  }catch(e){state.dbOk=false;setStatus("err","Connection error");}
+  state.loading=false;render();
+}
+
+function setStatus(type,text){
+  document.getElementById("status-dot").className="status-dot"+(type==="err"?" err":type==="loading"?" loading":"");
+  document.getElementById("status-text").textContent=text;
+}
+
+// ── Enhanced matching algorithm ───────────────────────────────────────────────
+function skillMatch(cSkills, rSkills){
+  if(!rSkills.length) return {score:1,matched:[],missing:[]};
+  const cNorm=cSkills.map(s=>s.toLowerCase().replace(/[\.\-\_\s]/g,""));
+  const matched=[], missing=[];
+  for(const rs of rSkills){
+    const rNorm=rs.toLowerCase().replace(/[\.\-\_\s]/g,"");
+    // Fuzzy: exact, contains, or common abbreviation
+    const hit=cNorm.some(cn=>cn===rNorm||cn.includes(rNorm)||rNorm.includes(cn));
+    hit?matched.push(rs):missing.push(rs);
+  }
+  return{score:matched.length/rSkills.length,matched,missing};
+}
+
+function locationMatch(cLoc,rLoc){
+  if(!cLoc||!rLoc)return 0.5;
+  const rL=rLoc.toLowerCase();
+  if(rL.includes("remote")||rL.includes("anywhere")||rL.includes("worldwide"))return 1;
+  const cL=cLoc.toLowerCase();
+  const cParts=cL.split(/[\s,]+/).filter(p=>p.length>2);
+  const rParts=rL.split(/[\s,;]+/).filter(p=>p.length>2);
+  if(rParts.some(rp=>cParts.some(cp=>cp.includes(rp)||rp.includes(cp))))return 1;
+  // Same country/region
+  const regions={us:["new york","san francisco","los angeles","chicago","seattle","austin","boston","miami","denver"],eu:["london","berlin","paris","amsterdam","dublin","stockholm"]};
+  for(const [,cities] of Object.entries(regions)){
+    const cIn=cities.some(c=>cL.includes(c));
+    const rIn=cities.some(r=>rParts.some(rp=>r.includes(rp)));
+    if(cIn&&rIn)return 0.6;
+  }
+  return 0.2;
+}
+
+function industryMatch(c,r){
+  const rInd=(r.industry||"").toLowerCase();
+  if(!rInd)return 0.8;
+  const cText=[(c.one_liner||""),(c.title||""),(c.company||""),
+    ...(tryParse(c.previous_companies)||[]).map(p=>p.company||"")].join(" ").toLowerCase();
+  const rWords=rInd.split(/[\s,\/\+]+/).filter(w=>w.length>3);
+  if(!rWords.length)return 0.8;
+  const hits=rWords.filter(w=>cText.includes(w));
+  return Math.max(0.1,hits.length/rWords.length);
+}
+
+function seniorityMatch(c,r){
+  const cSen=(c.seniority||"").toLowerCase();
+  const rTitle=(r.title||"").toLowerCase();
+  // Check if role expects founding/senior engineers
+  if(rTitle.includes("founding")&&(cSen==="founding"||cSen==="staff"||cSen==="senior"))return 1;
+  if(rTitle.includes("staff")&&(cSen==="staff"||cSen==="senior"))return 1;
+  if(rTitle.includes("senior")&&(cSen==="senior"||cSen==="staff"||cSen==="founding"||cSen==="lead"))return 1;
+  if(rTitle.includes("junior")&&cSen==="junior")return 1;
+  if(!cSen||!rTitle)return 0.7;
+  // Overqualified penalty
+  if((cSen==="staff"||cSen==="founding")&&rTitle.includes("junior"))return 0.4;
+  return 0.7;
+}
+
+function tryParse(val){
+  if(!val)return null;
+  if(typeof val==="object")return val;
+  try{return JSON.parse(val);}catch{return null;}
+}
+
+function scoreMatch(c,r){
+  const cSkills=c.skills||[];
+  const req=r.required_skills||[];
+  const nice=r.nice_skills||[];
+  const hasSkills=cSkills.length>0;
+
+  // Skills (45%)
+  const {score:reqScore,matched:reqMatched,missing}=skillMatch(cSkills,req);
+  const {score:niceScore,matched:niceMatched}=skillMatch(cSkills,nice);
+  const skillTotal=req.length?(reqScore*38+niceScore*7):22;
+
+  // Experience (20%)
+  const minExp=r.min_experience||0;
+  const candExp=c.experience_years||0;
+  let expScore=0;
+  if(minExp===0){expScore=20;}
+  else if(candExp>=minExp){expScore=20;}
+  else{expScore=Math.max(0,20-(minExp-candExp)*4);}
+
+  // Location (15%)
+  const rLoc=r.location||r.locations||"";
+  const locScore=Math.round(locationMatch(c.location,rLoc)*15);
+
+  // Industry (10%)
+  const indScore=Math.round(industryMatch(c,r)*10);
+
+  // Seniority (10%)
+  const senScore=Math.round(seniorityMatch(c,r)*10);
+
+  const total=Math.min(100,Math.round(skillTotal+expScore+locScore+indScore+senScore));
+
+  return{total,skillsScore:Math.round(skillTotal),expScore:Math.round(expScore),locScore,indScore,senScore,reqMatched,niceMatched,missing,hasSkills};
+}
+
+function initials(n){return(n||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();}
+function scoreBadge(t){return t>=75?'<span class="badge badge-green">Strong</span>':t>=50?'<span class="badge badge-amber">Partial</span>':'<span class="badge badge-red">Weak</span>';}
+function barCls(t){return t>=75?"bar-green":t>=50?"bar-amber":"bar-red";}
+function seniorityPill(s){return s?`<span class="seniority-pill seniority-${s}">${s}</span>`:""; }
+
+function switchNav(v){
+  state.view=v;state.matchType=null;state.matchTarget=null;
+  state.filterScore="all";state.filterExp="all";state.filterSeniority="all";
+  ["candidates","roles","shortlist"].forEach(x=>document.getElementById("nav-"+x).classList.toggle("active",x===v));
+  render();
+}
+window.switchNav=switchNav;
+
+function render(){
+  const sc=state.shortlist.size;
+  document.getElementById("sl-count").textContent=sc>0?sc:"";
+  document.getElementById("sl-bar-count").textContent=sc+" match"+(sc!==1?"es":"")+" shortlisted";
+  document.getElementById("shortlist-bar").classList.toggle("hidden",sc===0);
+  const main=document.getElementById("main");
+  if(state.matchTarget!==null){renderResults(main);return;}
+  if(state.view==="candidates")renderList(main,"candidates");
+  else if(state.view==="roles")renderList(main,"roles");
+  else renderShortlistView(main);
+}
+
+function renderList(main,type){
+  const isC=type==="candidates";
+  const items=isC?state.candidates:state.roles;
+  const enriched=state.candidates.filter(c=>c.skills&&c.skills.length>0).length;
+  main.innerHTML=`
+    <div class="page-header fade-up">
+      <div><div class="page-title">${isC?"Candidates":"Open Roles"}</div>
+      <div class="page-sub">${items.length} ${isC?"profiles · "+enriched+" enriched from resumes":"roles imported"}</div></div>
+      <div class="header-actions"><button class="btn" onclick="refreshData()"><i class="ti ti-refresh"></i> Refresh</button></div>
+    </div>
+    <div class="stats fade-up">
+      <div class="stat-card"><div class="stat-label">Candidates</div><div class="stat-value">${state.candidates.length}</div><div class="stat-sub">${enriched} with skills</div></div>
+      <div class="stat-card"><div class="stat-label">Open Roles</div><div class="stat-value">${state.roles.length}</div><div class="stat-sub">on Paraform</div></div>
+      <div class="stat-card"><div class="stat-label">Shortlisted</div><div class="stat-value">${state.shortlist.size}</div><div class="stat-sub">matches queued</div></div>
+      <div class="stat-card"><div class="stat-label">Strong Matches</div>
+        <div class="stat-value">${countStrongMatches()}</div><div class="stat-sub">75%+ score</div></div>
+    </div>
+    <div class="section-label">${items.length} ${isC?"candidates":"roles"}</div>
+    ${state.loading?'<div class="empty"><i class="ti ti-loader spinner"></i><p>Loading…</p></div>':
+    items.length===0?`<div class="empty"><i class="ti ti-inbox"></i><p>No ${isC?"candidates":"roles"} yet.</p></div>`:
+    `<div class="cards-grid">${items.map(i=>isC?candidateCard(i):roleCard(i)).join("")}</div>`}`;
+}
+
+function countStrongMatches(){
+  let count=0;
+  for(const c of state.candidates){
+    for(const r of state.roles){
+      if(scoreMatch(c,r).total>=75)count++;
+    }
+  }
+  return count;
+}
+
+function candidateCard(c){
+  const skills=c.skills||[];
+  const prevCos=tryParse(c.previous_companies)||[];
+  return`<div class="card fade-up">
+    <div class="card-header">
+      <div class="avatar">${initials(c.name)}</div>
+      <div><div class="card-name">${c.name} ${seniorityPill(c.seniority)}</div>
+      <div class="card-sub">${c.title||"—"} · ${c.experience_years||0}yr${c.location?" · "+c.location.split(",")[0]:""}</div></div>
+    </div>
+    ${skills.length?`<div class="tags">${skills.slice(0,6).map(s=>`<span class="tag enriched">${s}</span>`).join("")}${skills.length>6?`<span class="tag">+${skills.length-6}</span>`:""}</div>`
+    :`<div style="font-size:11px;color:var(--text-3);margin-top:4px;"><i class="ti ti-info-circle"></i> Run UPSERT_PROFILE.bat to add resume data</div>`}
+    ${prevCos.length?`<div class="profile-section"><div class="profile-section-title">Previous roles</div>${prevCos.slice(0,2).map(p=>`<div class="company-item">${p.title||""} <span>@ ${p.company||""}</span></div>`).join("")}</div>`:""}
+    ${c.notes?`<div class="notes-preview">${c.notes.length>120?c.notes.slice(0,120)+'...':c.notes}</div>`:''}
+    <div class="card-footer" style="display:flex;gap:6px;margin-top:6px">
+      <button class="match-btn" style="flex:1" onclick="startMatch('candidate',${c.id})"><i class="ti ti-arrows-right-left"></i> Find matching roles</button>
+      <button class="match-btn" style="width:32px;flex-shrink:0;" title="Add note" onclick="openNotesModal(${c.id},this.dataset.name)" data-name="${c.name}><i class="ti ti-notes"></i></button>
+      <button class="match-btn" style="width:32px;flex-shrink:0;color:var(--red-text);border-color:var(--red-bg);" onclick="deleteCandidate(${c.id},'${c.name.replace(/'/g,"\'")}')"><i class="ti ti-trash"></i></button>
+    </div>
+  </div>`;
+}
+
+function roleCard(r){
+  const req=r.required_skills||[];
+  return`<div class="card fade-up">
+    <div class="card-header">
+      <div class="avatar" style="background:var(--bg);color:var(--text-2)"><i class="ti ti-briefcase" style="font-size:16px"></i></div>
+      <div><div class="card-name">${r.title}</div>
+      <div class="card-sub">${r.company||"—"}${r.salary?" · "+r.salary:""}${r.workplace?" · "+r.workplace:""}</div></div>
+    </div>
+    <div class="tags">${req.slice(0,5).map(s=>`<span class="tag req">${s}</span>`).join("")}${req.length>5?`<span class="tag">+${req.length-5}</span>`:""}</div>
+    ${r.location||r.locations?`<div style="font-size:11px;color:var(--text-3);margin-top:6px;"><i class="ti ti-map-pin" style="font-size:12px"></i> ${r.location||r.locations}</div>`:""}
+    <div class="card-footer" style="display:flex;gap:6px;">
+      <button class="match-btn" style="flex:1" onclick="startMatch('role',${r.id})"><i class="ti ti-arrows-right-left"></i> Find matching candidates</button>
+      <button class="match-btn" style="width:32px;flex-shrink:0;color:var(--red-text);border-color:var(--red-bg);" onclick="deleteRole(${r.id},'${r.title.replace(/'/g,"\'")}')"><i class="ti ti-trash"></i></button>
+    </div>
+  </div>`;
+}
+
+function renderResults(main){
+  const isC=state.matchType==="candidate";
+  if(isC){
+    const c=state.candidates.find(x=>x.id===state.matchTarget);
+    if(!c){state.matchTarget=null;render();return;}
+    let results=state.roles.map(r=>({role:r,...scoreMatch(c,r)})).sort((a,b)=>b.total-a.total);
+    if(state.filterScore!=="all")results=results.filter(r=>state.filterScore==="strong"?r.total>=75:state.filterScore==="partial"?r.total>=50&&r.total<75:r.total<50);
+    const prevCos=tryParse(c.previous_companies)||[];
+    main.innerHTML=`
+      <div class="page-header fade-up">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button class="back-btn" onclick="goBack()"><i class="ti ti-arrow-left"></i> Back</button>
+          <div><div class="page-title">${c.name} ${seniorityPill(c.seniority)}</div>
+          <div class="page-sub">${c.title||"—"} · ${c.experience_years||0}yr${c.location?" · "+c.location:""}</div></div>
+        </div>
+        ${c.linkedin?`<a href="${c.linkedin}" target="_blank" class="btn"><i class="ti ti-brand-linkedin"></i> LinkedIn</a>`:""}
+      </div>
+      <div class="context-card fade-up">
+        ${c.one_liner?`<div style="font-size:13px;color:var(--text-2);margin-bottom:10px;font-style:italic">"${c.one_liner}"</div>`:""}
+        ${(c.skills||[]).length?`<div class="tags">${(c.skills||[]).map(s=>`<span class="tag enriched">${s}</span>`).join("")}</div>`
+        :`<div style="font-size:12px;color:var(--text-3)">No skills — run UPSERT_PROFILE.bat with their resume JSON to enrich</div>`}
+        ${prevCos.length?`<div class="profile-section"><div class="profile-section-title">Career history</div>${prevCos.map(p=>`<div class="company-item">${p.title||""} <span>@ ${p.company||""} ${p.dates?"· "+p.dates:""}</span></div>`).join("")}</div>`:""}
+      </div>
+      <div class="filter-row fade-up">
+        <select onchange="setFilter('score',this.value)">
+          <option value="all">All matches</option>
+          <option value="strong">Strong (75%+)</option>
+          <option value="partial">Partial (50–74%)</option>
+          <option value="weak">Weak (&lt;50%)</option>
+        </select>
+        ${results.length>0?`<button class="btn" onclick="shortlistAll('candidate',${c.id})"><i class="ti ti-clipboard-list"></i> Shortlist all visible</button>`:""}
+      </div>
+      <div class="section-label">${results.length} roles</div>
+      ${results.map(r=>resultRowRole(c,r)).join("")}
+      ${results.length===0?'<div class="empty"><i class="ti ti-filter-off"></i><p>No matches for this filter.</p></div>':""}`;
+  }else{
+    const r=state.roles.find(x=>x.id===state.matchTarget);
+    if(!r){state.matchTarget=null;render();return;}
+    let results=state.candidates.map(c=>({candidate:c,...scoreMatch(c,r)})).sort((a,b)=>b.total-a.total);
+    if(state.filterScore!=="all")results=results.filter(x=>state.filterScore==="strong"?x.total>=75:state.filterScore==="partial"?x.total>=50&&x.total<75:x.total<50);
+    if(state.filterExp!=="all"){const m=parseInt(state.filterExp);results=results.filter(x=>(x.candidate.experience_years||0)>=m);}
+    if(state.filterSeniority!=="all")results=results.filter(x=>x.candidate.seniority===state.filterSeniority);
+    main.innerHTML=`
+      <div class="page-header fade-up">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button class="back-btn" onclick="goBack()"><i class="ti ti-arrow-left"></i> Back</button>
+          <div><div class="page-title">${r.title}</div>
+          <div class="page-sub">${r.company||"—"}${r.salary?" · "+r.salary:""}${r.location||r.locations?" · "+(r.location||r.locations):""}</div></div>
+        </div>
+        ${r.paraform_link?`<a href="${r.paraform_link}" target="_blank" class="btn"><i class="ti ti-external-link"></i> View on Paraform</a>`:""}
+      </div>
+      <div class="context-card fade-up">
+        <div class="tags">${(r.required_skills||[]).map(s=>`<span class="tag req">${s}</span>`).join("")||"<span style='color:var(--text-3);font-size:12px'>No required skills</span>"}</div>
+        <div style="margin-top:8px;font-size:12px;color:var(--text-3);display:flex;gap:16px;flex-wrap:wrap;">
+          ${r.industry?`<span><i class="ti ti-building" style="vertical-align:-2px;margin-right:3px"></i>${r.industry}</span>`:""}
+          ${r.workplace?`<span><i class="ti ti-home" style="vertical-align:-2px;margin-right:3px"></i>${r.workplace}</span>`:""}
+          ${r.min_experience?`<span><i class="ti ti-clock" style="vertical-align:-2px;margin-right:3px"></i>${r.min_experience}+ years</span>`:""}
+          ${r.reward?`<span><i class="ti ti-gift" style="vertical-align:-2px;margin-right:3px"></i>${r.reward}</span>`:""}
+        </div>
+      </div>
+      <div class="filter-row fade-up">
+        <select onchange="setFilter('score',this.value)">
+          <option value="all">All matches</option>
+          <option value="strong">Strong (75%+)</option>
+          <option value="partial">Partial (50–74%)</option>
+          <option value="weak">Weak (&lt;50%)</option>
+        </select>
+        <select onchange="setFilter('exp',this.value)">
+          <option value="all">Any experience</option>
+          <option value="2">2+ years</option>
+          <option value="4">4+ years</option>
+          <option value="6">6+ years</option>
+          <option value="8">8+ years</option>
+        </select>
+        <select onchange="setFilter('seniority',this.value)">
+          <option value="all">Any seniority</option>
+          <option value="Founding">Founding</option>
+          <option value="Staff">Staff</option>
+          <option value="Senior">Senior</option>
+          <option value="Lead">Lead</option>
+          <option value="Mid">Mid</option>
+          <option value="Junior">Junior</option>
+        </select>
+        ${results.length>0?`<button class="btn" onclick="shortlistAll('role',${r.id})"><i class="ti ti-clipboard-list"></i> Shortlist all visible</button>`:""}
+      </div>
+      <div class="section-label">${results.length} candidates</div>
+      ${results.map(x=>resultRowCandidate(x,r)).join("")}
+      ${results.length===0?'<div class="empty"><i class="ti ti-filter-off"></i><p>No candidates match this filter.</p></div>':""}`;
+  }
+}
+
+function breakdownHTML(s){
+  return`<div class="breakdown">
+    <div class="breakdown-item"><div class="breakdown-val" style="color:${s.skillsScore>=32?"var(--green)":s.skillsScore>=18?"var(--amber)":"var(--red)"}">${s.skillsScore}<span style="font-size:10px">/45</span></div><div class="breakdown-label">Skills</div></div>
+    <div class="breakdown-item"><div class="breakdown-val">${s.expScore}<span style="font-size:10px">/20</span></div><div class="breakdown-label">Exp</div></div>
+    <div class="breakdown-item"><div class="breakdown-val">${s.locScore}<span style="font-size:10px">/15</span></div><div class="breakdown-label">Location</div></div>
+    <div class="breakdown-item"><div class="breakdown-val">${s.indScore}<span style="font-size:10px">/10</span></div><div class="breakdown-label">Industry</div></div>
+    <div class="breakdown-item"><div class="breakdown-val">${s.senScore}<span style="font-size:10px">/10</span></div><div class="breakdown-label">Seniority</div></div>
+  </div>`;
+}
+
+function resultRowRole(c,r){
+  const key=`match:${c.id}:${r.role.id}`;
+  const sel=state.shortlist.has(key);
+  return`<div class="result-card ${sel?"selected":""} fade-up">
+    <div class="result-row">
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <input type="checkbox" class="chk" ${sel?"checked":""} onchange="toggleShortlist('${key}')">
+        <div><div class="card-name">${r.role.title}</div><div class="card-sub">${r.role.company||"—"}${r.role.salary?" · "+r.role.salary:""}</div></div>
+      </div>
+      <div style="text-align:right;">${scoreBadge(r.total)}<div class="score-num">${r.total}%</div></div>
+    </div>
+    <div class="score-bar-wrap"><div class="score-bar ${barCls(r.total)}" style="width:${r.total}%"></div></div>
+    ${breakdownHTML(r)}
+    ${r.missing.length?`<div class="missing-skills">Missing: ${r.missing.slice(0,6).map(s=>`<span>${s}</span>`).join("")}</div>`:""}
+    ${r.role.paraform_link?`<div class="result-links"><a href="${r.role.paraform_link}" target="_blank" class="result-link"><i class="ti ti-external-link"></i>View on Paraform</a></div>`:""}
+  </div>`;
+}
+
+function resultRowCandidate(x,r){
+  const key=`match:${x.candidate.id}:${r.id}`;
+  const sel=state.shortlist.has(key);
+  const c=x.candidate;
+  return`<div class="result-card ${sel?"selected":""} fade-up">
+    <div class="result-row">
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <input type="checkbox" class="chk" ${sel?"checked":""} onchange="toggleShortlist('${key}')">
+        <div class="avatar" style="width:32px;height:32px;font-size:11px;flex-shrink:0;">${initials(c.name)}</div>
+        <div><div class="card-name">${c.name} ${seniorityPill(c.seniority)}</div>
+        <div class="card-sub">${c.title||"—"} · ${c.experience_years||0}yr${c.location?" · "+c.location.split(",")[0]:""}</div></div>
+      </div>
+      <div style="text-align:right;">${scoreBadge(x.total)}<div class="score-num">${x.total}%</div></div>
+    </div>
+    <div class="score-bar-wrap"><div class="score-bar ${barCls(x.total)}" style="width:${x.total}%"></div></div>
+    ${breakdownHTML(x)}
+    ${x.missing.length?`<div class="missing-skills">Missing: ${x.missing.slice(0,6).map(s=>`<span>${s}</span>`).join("")}</div>`:""}
+    <div class="result-links">
+      ${c.linkedin?`<a href="${c.linkedin}" target="_blank" class="result-link"><i class="ti ti-brand-linkedin"></i>LinkedIn</a>`:""}
+      <button class="notes-btn" onclick="openNotesModal(${c.id},this.dataset.name)" data-name="${c.name}><i class="ti ti-notes" style="font-size:12px"></i>${c.notes?'Edit note':'Add note'}</button>
+    </div>
+    ${c.notes?`<div class="notes-preview" style="margin-top:6px">${c.notes.length>160?c.notes.slice(0,160)+'...':c.notes}</div>`:''}
+  </div>`;
+}
+
+function renderShortlistView(main){
+  const items=[...state.shortlist].map(key=>{
+    const[,cId,rId]=key.split(":");
+    const c=state.candidates.find(x=>x.id==cId);
+    const r=state.roles.find(x=>x.id==rId);
+    if(!c||!r)return null;
+    return{key,c,r,...scoreMatch(c,r)};
+  }).filter(Boolean).sort((a,b)=>b.total-a.total);
+
+  main.innerHTML=`
+    <div class="page-header fade-up">
+      <div><div class="page-title">My Shortlist</div><div class="page-sub">${items.length} match${items.length!==1?"es":""} queued for Paraform submission</div></div>
+      <div class="header-actions">
+        ${items.length>0?`<button class="btn" onclick="clearShortlist()"><i class="ti ti-trash"></i> Clear</button>
+        <button class="btn success" onclick="exportCSV()"><i class="ti ti-download"></i> Export CSV</button>`:""}
+      </div>
+    </div>
+    ${items.length===0?'<div class="empty"><i class="ti ti-clipboard-list"></i><p>No matches shortlisted yet. Browse roles and check candidates you want to submit.</p></div>':
+    items.map(item=>`<div class="result-card fade-up">
+      <div class="result-row">
+        <div>
+          <div style="font-size:11px;color:var(--text-3);margin-bottom:3px;">${item.r.title} · ${item.r.company||"—"}${item.r.salary?" · "+item.r.salary:""}</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="avatar" style="width:28px;height:28px;font-size:10px;">${initials(item.c.name)}</div>
+            <div><div class="card-name">${item.c.name} ${seniorityPill(item.c.seniority)}</div>
+            <div class="card-sub">${item.c.title||"—"} · ${item.c.experience_years||0}yr</div></div>
+          </div>
+        </div>
+        <div style="text-align:right;">${scoreBadge(item.total)}<div class="score-num">${item.total}%</div></div>
+      </div>
+      <div class="score-bar-wrap"><div class="score-bar ${barCls(item.total)}" style="width:${item.total}%"></div></div>
+      <div class="result-links">
+        ${item.c.linkedin?`<a href="${item.c.linkedin}" target="_blank" class="result-link"><i class="ti ti-brand-linkedin"></i>LinkedIn</a>`:""}
+        ${item.r.paraform_link?`<a href="${item.r.paraform_link}" target="_blank" class="result-link"><i class="ti ti-external-link"></i>View role</a>`:""}
+        <button class="notes-btn" onclick="openNotesModal(${item.c.id},this.dataset.name)" data-name="${item.c.name}"><i class="ti ti-notes" style="font-size:12px"></i>${item.c.notes?'Edit note':'Add note'}</button>
+        <button class="result-link" style="color:var(--red-text)" onclick="removeFromShortlist('${item.key}')"><i class="ti ti-x"></i> Remove</button>
+      </div>
+    </div>`).join("")}`;
+}
+
+function exportCSV(){
+  const items=[...state.shortlist].map(key=>{
+    const[,cId,rId]=key.split(":");
+    const c=state.candidates.find(x=>x.id==cId);
+    const r=state.roles.find(x=>x.id==rId);
+    if(!c||!r)return null;
+    const s=scoreMatch(c,r);
+    return{"Candidate":c.name,"Seniority":c.seniority||"","Title":c.title||"","Experience (yrs)":c.experience_years||0,"Location":c.location||"","Role":r.title,"Company":r.company||"","Match Score":s.total+"%","Skills Score":s.skillsScore+"/45","Exp Score":s.expScore+"/20","Location Score":s.locScore+"/15","Industry Score":s.indScore+"/10","Seniority Score":s.senScore+"/10","Skills Matched":s.reqMatched.join("; "),"Missing Skills":s.missing.join("; "),"LinkedIn":c.linkedin||"","Paraform Link":r.paraform_link||"","Salary":r.salary||"","Reward":r.reward||""};
+  }).filter(Boolean);
+  if(!items.length)return;
+  const headers=Object.keys(items[0]);
+  const csv=[headers.join(","),...items.map(r=>headers.map(h=>`"${(r[h]??"").toString().replace(/"/g,'""')}"`).join(","))].join("\n");
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+  a.download=`paraform_shortlist_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+window.startMatch=(type,id)=>{state.matchType=type;state.matchTarget=id;state.filterScore="all";state.filterExp="all";state.filterSeniority="all";render();};
+window.goBack=()=>{state.matchTarget=null;render();};
+window.refreshData=()=>{state.loading=true;cache.candidates=null;cache.roles=null;render();loadData(true);};
+window.setFilter=(k,v)=>{if(k==="score")state.filterScore=v;else if(k==="exp")state.filterExp=v;else state.filterSeniority=v;render();};
+window.toggleShortlist=key=>{state.shortlist.has(key)?state.shortlist.delete(key):state.shortlist.add(key);render();};
+window.removeFromShortlist=key=>{state.shortlist.delete(key);render();};
+window.clearShortlist=()=>{state.shortlist.clear();render();};
+window.exportCSV=exportCSV;
+window.shortlistAll=(type,id)=>{
+  if(type==="role"){
+    const r=state.roles.find(x=>x.id===id);if(!r)return;
+    state.candidates.forEach(c=>{
+      const{total}=scoreMatch(c,r);
+      const expOk=state.filterExp==="all"||(c.experience_years||0)>=parseInt(state.filterExp);
+      const senOk=state.filterSeniority==="all"||c.seniority===state.filterSeniority;
+      const scoreOk=state.filterScore==="all"||(state.filterScore==="strong"&&total>=75)||(state.filterScore==="partial"&&total>=50&&total<75)||(state.filterScore==="weak"&&total<50);
+      if(scoreOk&&expOk&&senOk)state.shortlist.add(`match:${c.id}:${r.id}`);
+    });
+  }else{
+    const c=state.candidates.find(x=>x.id===id);if(!c)return;
+    state.roles.forEach(r=>{
+      const{total}=scoreMatch(c,r);
+      const scoreOk=state.filterScore==="all"||(state.filterScore==="strong"&&total>=75)||(state.filterScore==="partial"&&total>=50&&total<75)||(state.filterScore==="weak"&&total<50);
+      if(scoreOk)state.shortlist.add(`match:${c.id}:${r.id}`);
+    });
+  }
+  render();
+};
+
+// ── Delete functions ─────────────────────────────────────────────────────────
+async function deleteCandidate(id, name) {
+  if (!confirm(`Remove ${name} from the database?
+
+This cannot be undone.`)) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/candidates?id=eq.${id}`, {
+      method: "DELETE",
+      headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY, Prefer: "return=minimal" }
+    });
+    if (res.ok || res.status === 204) {
+      // Remove from local state and cache
+      state.candidates = state.candidates.filter(c => c.id !== id);
+      cache.candidates = state.candidates;
+      // Remove any shortlist entries for this candidate
+      for (const key of [...state.shortlist]) { if (key.includes(`:${id}:`)) state.shortlist.delete(key); }
+      render();
+    } else {
+      alert("Failed to delete candidate. Please try again.");
+    }
+  } catch(e) { alert("Error: " + e.message); }
+}
+
+async function deleteRole(id, title) {
+  if (!confirm(`Remove "${title}" from the database?
+
+This cannot be undone.`)) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/roles?id=eq.${id}`, {
+      method: "DELETE",
+      headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY, Prefer: "return=minimal" }
+    });
+    if (res.ok || res.status === 204) {
+      state.roles = state.roles.filter(r => r.id !== id);
+      cache.roles = state.roles;
+      for (const key of [...state.shortlist]) { if (key.endsWith(`:${id}`)) state.shortlist.delete(key); }
+      render();
+    } else {
+      alert("Failed to delete role. Please try again.");
+    }
+  } catch(e) { alert("Error: " + e.message); }
+}
+
+window.deleteCandidate = deleteCandidate;
+window.deleteRole = deleteRole;
+
+// ── Notes ─────────────────────────────────────────────────────────────────────
+let notesModal = null;
+
+async function saveNote(candidateId, note) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/candidates?id=eq.${candidateId}`, {
+    method: 'PATCH',
+    headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+    body: JSON.stringify({ notes: note })
+  });
+  if (res.ok || res.status === 204) {
+    const c = state.candidates.find(x => x.id === candidateId);
+    if (c) c.notes = note;
+    if (cache.candidates) { const cc = cache.candidates.find(x => x.id === candidateId); if (cc) cc.notes = note; }
+    return true;
+  }
+  return false;
+}
+
+window.openNotesModal = (candidateId, name) => {
+  const c = state.candidates.find(x => x.id === candidateId);
+  notesModal = { candidateId, name, currentNote: c?.notes || '' };
+  renderNotesModal();
+};
+window.closeNotesModal = () => { const el = document.getElementById('notes-modal'); if (el) el.remove(); notesModal = null; };
+window.submitNote = async () => {
+  const textarea = document.getElementById('notes-textarea');
+  if (!textarea || !notesModal) return;
+  const btn = document.getElementById('notes-save-btn');
+  btn.textContent = 'Saving...'; btn.disabled = true;
+  const ok = await saveNote(notesModal.candidateId, textarea.value.trim());
+  if (ok) { closeNotesModal(); render(); }
+  else { btn.textContent = 'Save'; btn.disabled = false; alert('Failed to save. Please try again.'); }
+};
+function renderNotesModal() {
+  let el = document.getElementById('notes-modal');
+  if (!el) { el = document.createElement('div'); el.id = 'notes-modal'; document.body.appendChild(el); }
+  el.innerHTML = `<div class="modal-overlay" onclick="closeNotesModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-title"><i class="ti ti-notes" style="vertical-align:-2px;margin-right:6px"></i>Recruiting Notes</div>
+      <div class="modal-sub">${notesModal.name}</div>
+      <textarea id="notes-textarea" class="notes-box" placeholder="Add recruiting notes, match rationale, interview feedback...">${notesModal.currentNote}</textarea>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeNotesModal()">Cancel</button>
+        <button class="btn primary" id="notes-save-btn" onclick="submitNote()"><i class="ti ti-check"></i> Save</button>
+      </div>
+    </div>
+  </div>`;
+  setTimeout(() => document.getElementById('notes-textarea')?.focus(), 50);
+}
+
+loadData(false);
+</script>
+</body>
+</html>
